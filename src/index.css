@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@theme {
+  /* Aquí registramos tu verde especial */
+  --color-heraco: #cbd620;
+}
+
+/* Un pequeño truco para que el fondo sea negro profundo */
+body {
+  @apply bg-black;
+}
