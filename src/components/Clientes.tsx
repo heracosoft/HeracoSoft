@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-// Se agregó Star para marcar la principal
 import { Users, Plus, Mail, Phone, Building2, Trash2, Search, X, MapPin, Settings, Maximize2, Pencil, Share2, ChevronDown, ChevronUp, Star } from 'lucide-react'; 
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -10,7 +9,7 @@ interface Sucursal {
   nombre: string;
   direccion: string;
   coordenadas?: string;
-  esPrincipal?: boolean; // <-- Nueva propiedad
+  esPrincipal?: boolean; 
 }
 
 interface TipoCliente {
@@ -120,7 +119,6 @@ export default function Clientes() {
     }
   };
 
-  // --- LÓGICA DE SUCURSAL PRINCIPAL ---
   const marcarComoPrincipal = (index: number) => {
     setSucursalesTemp(prev => prev.map((s, i) => ({
       ...s,
@@ -130,7 +128,6 @@ export default function Clientes() {
 
   const agregarSucursalLista = () => {
     if (nuevaSucursal.nombre && nuevaSucursal.direccion) {
-      // Si es la primera, marcarla como principal automáticamente
       const esLaPrimera = sucursalesTemp.length === 0;
       setSucursalesTemp([...sucursalesTemp, { ...nuevaSucursal, esPrincipal: esLaPrimera }]);
       setNuevaSucursal({ nombre: '', direccion: '', coordenadas: '', esPrincipal: false });
@@ -198,68 +195,69 @@ export default function Clientes() {
   );
 
   return (
-    <div className="p-8 bg-black min-h-screen text-white font-sans relative z-0">
-      <div className="flex justify-between items-center mb-10 border-b border-zinc-800 pb-6">
+    <div className="p-4 md:p-8 bg-black min-h-screen text-white font-sans relative z-0">
+      
+      {/* 🟢 CABECERA RESPONSIVA */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-10 border-b border-zinc-800 pb-6 gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter uppercase">Directorio</h1>
-          <p className="text-heraco font-bold text-sm tracking-widest">Gestión de Clientes y Entregas</p>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">Directorio</h1>
+          <p className="text-heraco font-bold text-xs md:text-sm tracking-widest">Gestión de Clientes y Entregas</p>
         </div>
-        <div className="flex gap-4">
-          <button onClick={() => setMostrarModalTipos(true)} className="bg-zinc-900 border border-zinc-700 text-white font-bold py-3 px-6 rounded-2xl flex items-center gap-2 hover:bg-zinc-800 transition-all text-xs">
-            <Settings size={18} /> CONFIGURAR TIPOS
+        <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto">
+          <button onClick={() => setMostrarModalTipos(true)} className="flex-1 md:flex-none justify-center bg-zinc-900 border border-zinc-700 text-white font-bold py-3 px-4 md:px-6 rounded-xl md:rounded-2xl flex items-center gap-2 hover:bg-zinc-800 transition-all text-xs">
+            <Settings size={18} /> TIPOS
           </button>
-          <button onClick={abrirNuevoFormulario} className="bg-heraco text-black font-extrabold py-3 px-6 rounded-2xl flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-heraco/20 text-xs">
+          <button onClick={abrirNuevoFormulario} className="flex-1 md:flex-none justify-center bg-heraco text-black font-extrabold py-3 px-4 md:px-6 rounded-xl md:rounded-2xl flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-heraco/20 text-xs">
             <Plus size={18} /> NUEVO CLIENTE
           </button>
         </div>
       </div>
 
-      <div className="relative mb-8">
+      <div className="relative mb-6 md:mb-8">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
         <input 
           type="text"
           placeholder="Buscar por empresa o contacto..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 focus:border-heraco focus:outline-none transition-all font-bold"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl md:rounded-2xl py-3 md:py-4 pl-12 pr-4 focus:border-heraco focus:outline-none transition-all font-bold text-sm md:text-base"
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 relative z-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-6 relative z-0">
         {clientesFiltrados.map((c) => {
           const tipoObj = tipos.find(t => t.id === c.tipo_cliente_id);
           const tieneSucursales = c.sucursales && c.sucursales.length > 0;
           
-          // Buscar la principal marcada, si no hay ninguna (datos viejos), usar la primera
           const sucursalPrincipal = c.sucursales.find(s => s.esPrincipal) || (tieneSucursales ? c.sucursales[0] : null);
           const sucursalesSecundarias = c.sucursales.filter(s => s !== sucursalPrincipal);
           const estaExpandido = clienteExpandido[c.id] || false;
 
           return (
-            <div key={c.id} className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl hover:border-heraco/40 transition-all group relative">
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                <button onClick={() => prepararEdicion(c)} className="text-zinc-600 hover:text-heraco bg-black p-2 rounded-lg"><Pencil size={16} /></button>
-                <button onClick={() => eliminarCliente(c.id)} className="text-zinc-600 hover:text-red-500 bg-black p-2 rounded-lg"><Trash2 size={16} /></button>
+            <div key={c.id} className="bg-zinc-900 border border-zinc-800 p-5 md:p-6 rounded-2xl md:rounded-3xl hover:border-heraco/40 transition-all group relative">
+              <div className="absolute top-4 right-4 flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                <button onClick={() => prepararEdicion(c)} className="text-zinc-400 hover:text-heraco bg-black p-2 rounded-lg border border-zinc-800"><Pencil size={14} /></button>
+                <button onClick={() => eliminarCliente(c.id)} className="text-zinc-400 hover:text-red-500 bg-black p-2 rounded-lg border border-zinc-800"><Trash2 size={14} /></button>
               </div>
               
-              <div className="flex items-center gap-4 mb-4">
-                <div className="bg-black border border-zinc-800 p-3 rounded-2xl w-16 h-16 flex items-center justify-center overflow-hidden shrink-0">
+              <div className="flex items-center gap-4 mb-4 pr-16">
+                <div className="bg-black border border-zinc-800 p-2 md:p-3 rounded-xl md:rounded-2xl w-14 h-14 md:w-16 md:h-16 flex items-center justify-center overflow-hidden shrink-0">
                   {c.logo ? <img src={c.logo} alt={c.empresa} className="w-full h-full object-contain" /> : <Building2 className="text-heraco" size={24} />}
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl leading-none mb-2">{c.empresa || 'Empresa General'}</h3>
+                  <h3 className="font-bold text-lg md:text-xl leading-tight mb-1.5 line-clamp-1">{c.empresa || 'Empresa General'}</h3>
                   {tipoObj && (
-                    <span className="bg-heraco/20 text-heraco text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider border border-heraco/30">
+                    <span className="bg-heraco/20 text-heraco text-[9px] md:text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider border border-heraco/30">
                       {tipoObj.nombre}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm mb-6 pb-4 border-b border-zinc-800">
-                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Users size={16} /> <span>{c.nombre_contacto}</span></div>
-                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Mail size={16} /> <span>{c.email || 'Sin correo'}</span></div>
-                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Phone size={16} /> <span>{c.telefono || 'Sin teléfono'}</span></div>
+              <div className="space-y-2 text-xs md:text-sm mb-5 pb-4 border-b border-zinc-800">
+                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Users size={16} className="shrink-0" /> <span className="truncate">{c.nombre_contacto}</span></div>
+                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Mail size={16} className="shrink-0" /> <span className="truncate">{c.email || 'Sin correo'}</span></div>
+                <div className="flex items-center gap-3 text-zinc-400 font-bold"><Phone size={16} className="shrink-0" /> <span className="truncate">{c.telefono || 'Sin teléfono'}</span></div>
               </div>
 
               <div>
@@ -282,11 +280,11 @@ export default function Clientes() {
                       <div className="flex items-start gap-3">
                         <MapPin size={16} className="text-heraco mt-0.5 shrink-0" />
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="text-xs font-bold text-white leading-none">{sucursalPrincipal.nombre}</p>
                             <span className="text-[8px] bg-heraco text-black px-1 rounded font-black uppercase tracking-tighter italic">Matriz</span>
                           </div>
-                          <p className="text-[10px] text-zinc-500 leading-tight font-medium">{sucursalPrincipal.direccion}</p>
+                          <p className="text-[10px] text-zinc-500 leading-tight font-medium line-clamp-2">{sucursalPrincipal.direccion}</p>
                         </div>
                       </div>
                       {sucursalPrincipal.coordenadas && (
@@ -305,7 +303,7 @@ export default function Clientes() {
                         <MapPin size={16} className="text-zinc-600 mt-0.5 shrink-0" />
                         <div>
                           <p className="text-xs font-bold text-zinc-300 leading-none mb-1">{sucursal.nombre}</p>
-                          <p className="text-[10px] text-zinc-500 leading-tight">{sucursal.direccion}</p>
+                          <p className="text-[10px] text-zinc-500 leading-tight line-clamp-2">{sucursal.direccion}</p>
                         </div>
                       </div>
                       {sucursal.coordenadas && (
@@ -322,59 +320,64 @@ export default function Clientes() {
         })}
       </div>
 
+      {/* 🟢 MODAL FORMULARIO CLIENTE */}
       {mostrarForm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40 overflow-y-auto">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col md:flex-row my-8">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40 overflow-y-auto custom-scrollbar">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-5xl rounded-3xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row my-auto max-h-[90vh]">
             
-            <div className="p-8 flex-1 border-b md:border-b-0 md:border-r border-zinc-800">
+            <div className="p-6 md:p-8 flex-1 border-b md:border-b-0 md:border-r border-zinc-800 overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-black uppercase tracking-tighter text-heraco italic">
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter text-heraco italic">
                   {idEditando ? 'Actualizar Cliente' : 'Registro Maestro'}
                 </h2>
+                {/* Botón de cerrar visible en la cabecera en móvil por si la pantalla es chica */}
+                <button onClick={() => setMostrarForm(false)} className="md:hidden text-zinc-500 hover:text-white bg-black p-2 rounded-full border border-zinc-800"><X size={20} /></button>
               </div>
               
               <div className="space-y-4">
                 <div>
                   <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">Nombre de la Empresa</label>
-                  <input required value={nuevo.empresa} className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, empresa: e.target.value})} />
+                  <input required value={nuevo.empresa} className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, empresa: e.target.value})} />
                 </div>
                 <div>
                   <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">URL Logo (PNG preferente)</label>
-                  <input placeholder="https://..." value={nuevo.logo} className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white" onChange={e => setNuevo({...nuevo, logo: e.target.value})} />
+                  <input placeholder="https://..." value={nuevo.logo} className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white" onChange={e => setNuevo({...nuevo, logo: e.target.value})} />
                 </div>
                 <div>
                   <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">Contacto Titular</label>
-                  <input required value={nuevo.nombre_contacto} className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, nombre_contacto: e.target.value})} />
+                  <input required value={nuevo.nombre_contacto} className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, nombre_contacto: e.target.value})} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">E-mail</label>
-                    <input type="email" value={nuevo.email} className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, email: e.target.value})} />
+                    <input type="email" value={nuevo.email} className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, email: e.target.value})} />
                   </div>
                   <div>
                     <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">Teléfono</label>
-                    <input value={nuevo.telefono} className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, telefono: e.target.value})} />
+                    <input value={nuevo.telefono} className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" onChange={e => setNuevo({...nuevo, telefono: e.target.value})} />
                   </div>
                 </div>
                 <div>
                   <label className="text-[10px] text-zinc-500 uppercase font-black ml-1">Categoría Comercial</label>
-                  <select className="w-full bg-black border border-zinc-800 p-3 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" value={nuevo.tipo_cliente_id} onChange={e => setNuevo({...nuevo, tipo_cliente_id: e.target.value})}>
+                  <select className="w-full bg-black border border-zinc-800 p-3 md:p-4 rounded-xl mt-1 focus:border-heraco outline-none text-white font-bold" value={nuevo.tipo_cliente_id} onChange={e => setNuevo({...nuevo, tipo_cliente_id: e.target.value})}>
                     {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                   </select>
                 </div>
               </div>
             </div>
 
-            <div className="p-8 flex-1 bg-zinc-900/50 flex flex-col justify-between">
+            <div className="p-6 md:p-8 flex-1 bg-zinc-900/50 flex flex-col justify-between overflow-y-auto custom-scrollbar">
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Rutas de Entrega</h2>
+                <div className="flex justify-between items-center mb-6 hidden md:flex">
+                  <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter text-white">Rutas de Entrega</h2>
                   <button onClick={() => setMostrarForm(false)} className="text-zinc-500 hover:text-white bg-black p-2 rounded-full border border-zinc-800"><X size={20} /></button>
                 </div>
+                {/* Título para móvil */}
+                <h2 className="text-xl font-black uppercase tracking-tighter text-white mb-4 md:hidden">Rutas de Entrega</h2>
 
                 <div className="bg-black p-4 rounded-2xl border border-zinc-800 mb-6 space-y-3 shadow-2xl">
-                  <input placeholder="Nombre de Sucursal" value={nuevaSucursal.nombre} onChange={e => setNuevaSucursal({...nuevaSucursal, nombre: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded-lg text-sm outline-none text-white focus:border-heraco font-bold" />
-                  <input placeholder="Dirección para logística" value={nuevaSucursal.direccion} onChange={e => setNuevaSucursal({...nuevaSucursal, direccion: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded-lg text-sm outline-none text-white focus:border-heraco" />
+                  <input placeholder="Nombre de Sucursal" value={nuevaSucursal.nombre} onChange={e => setNuevaSucursal({...nuevaSucursal, nombre: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-sm outline-none text-white focus:border-heraco font-bold" />
+                  <input placeholder="Dirección para logística" value={nuevaSucursal.direccion} onChange={e => setNuevaSucursal({...nuevaSucursal, direccion: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-sm outline-none text-white focus:border-heraco" />
                   
                   <div className="w-full h-32 rounded-lg overflow-hidden border border-zinc-800 relative z-0 group">
                     <button 
@@ -383,7 +386,7 @@ export default function Clientes() {
                       className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
                       <Maximize2 className="text-heraco mb-2" size={32} />
-                      <span className="text-white font-black tracking-widest text-xs">FIJAR EN MAPA</span>
+                      <span className="text-white font-black tracking-widest text-[10px] md:text-xs">FIJAR EN MAPA</span>
                     </button>
                     <MapContainer center={[17.0654, -96.7236]} zoom={13} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false} dragging={false}>
                       <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
@@ -391,34 +394,34 @@ export default function Clientes() {
                     </MapContainer>
                   </div>
 
-                  <button onClick={agregarSucursalLista} type="button" className="w-full bg-heraco/10 text-heraco border border-heraco/30 font-black py-2 rounded-lg text-[10px] uppercase tracking-widest hover:bg-heraco hover:text-black transition-all">
+                  <button onClick={agregarSucursalLista} type="button" className="w-full bg-heraco/10 text-heraco border border-heraco/30 font-black py-3 rounded-lg text-[10px] uppercase tracking-widest hover:bg-heraco hover:text-black transition-all">
                     + Agregar Ubicación
                   </button>
                 </div>
 
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar mb-4">
                   {sucursalesTemp.map((s, i) => (
                     <div key={i} className={`flex justify-between items-center p-3 rounded-xl border transition-all ${s.esPrincipal ? 'bg-heraco/10 border-heraco/50 shadow-[0_0_15px_rgba(203,222,32,0.1)]' : 'bg-black border-zinc-800 opacity-60'}`}>
-                      <div className="flex gap-3 items-center">
+                      <div className="flex gap-2 md:gap-3 items-center">
                         <button 
                             type="button" 
                             onClick={() => marcarComoPrincipal(i)}
-                            className={`p-1 rounded-full transition-all ${s.esPrincipal ? 'text-heraco scale-125' : 'text-zinc-800 hover:text-zinc-600'}`}
+                            className={`p-1 rounded-full transition-all shrink-0 ${s.esPrincipal ? 'text-heraco scale-110 md:scale-125' : 'text-zinc-800 hover:text-zinc-600'}`}
                         >
-                            <Star size={18} fill={s.esPrincipal ? "currentColor" : "none"} />
+                            <Star size={16} fill={s.esPrincipal ? "currentColor" : "none"} />
                         </button>
                         <div>
-                            <p className={`text-sm font-black ${s.esPrincipal ? 'text-heraco' : 'text-zinc-300'}`}>{s.nombre} {s.esPrincipal && <span className="text-[8px] uppercase italic ml-1 opacity-60">(Principal)</span>}</p>
-                            <p className="text-[10px] text-zinc-500 font-medium truncate w-48">{s.direccion}</p>
+                            <p className={`text-xs md:text-sm font-black ${s.esPrincipal ? 'text-heraco' : 'text-zinc-300'} line-clamp-1`}>{s.nombre} {s.esPrincipal && <span className="text-[8px] uppercase italic ml-1 opacity-60">(Matriz)</span>}</p>
+                            <p className="text-[9px] md:text-[10px] text-zinc-500 font-medium line-clamp-1 w-40 md:w-48">{s.direccion}</p>
                         </div>
                       </div>
-                      <button type="button" onClick={() => setSucursalesTemp(sucursalesTemp.filter((_, idx) => idx !== i))} className="text-zinc-800 hover:text-red-500 transition-colors p-2"><Trash2 size={16} /></button>
+                      <button type="button" onClick={() => setSucursalesTemp(sucursalesTemp.filter((_, idx) => idx !== i))} className="text-zinc-800 hover:text-red-500 transition-colors p-2 shrink-0"><Trash2 size={16} /></button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <button onClick={guardarCliente} className="w-full bg-heraco text-black font-black py-4 rounded-xl mt-8 hover:scale-105 transition-transform text-sm shadow-2xl uppercase tracking-widest italic">
+              <button onClick={guardarCliente} className="w-full bg-heraco text-black font-black py-4 rounded-xl mt-4 hover:scale-[1.02] transition-transform text-xs md:text-sm shadow-2xl uppercase tracking-widest italic shrink-0">
                 Sincronizar Cliente
               </button>
             </div>
@@ -426,15 +429,15 @@ export default function Clientes() {
         </div>
       )}
 
-      {/* MODALES DE MAPA Y TIPOS SE MANTIENEN IGUAL... */}
+      {/* MODALES DE MAPA Y TIPOS */}
       {mapaExpandido && (
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="p-6 flex justify-between items-center bg-zinc-950 border-b border-zinc-800">
+          <div className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-950 border-b border-zinc-800 gap-4">
             <div>
-              <h2 className="text-2xl font-black uppercase text-heraco italic">Geolocalización Heraco</h2>
-              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Coloca el pin en el punto exacto de descarga</p>
+              <h2 className="text-xl md:text-2xl font-black uppercase text-heraco italic">Geolocalización</h2>
+              <p className="text-zinc-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">Coloca el pin en el punto exacto</p>
             </div>
-            <button onClick={() => setMapaExpandido(false)} className="bg-heraco text-black px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">
+            <button onClick={() => setMapaExpandido(false)} className="w-full md:w-auto bg-heraco text-black px-6 md:px-8 py-3 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:scale-105 transition-all">
               Confirmar Coordenadas
             </button>
           </div>
@@ -449,20 +452,20 @@ export default function Clientes() {
 
       {mostrarModalTipos && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-8 shadow-2xl">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">Segmentación</h2>
-              <button onClick={() => setMostrarModalTipos(false)} className="text-zinc-500 hover:text-white"><X /></button>
+              <button onClick={() => setMostrarModalTipos(false)} className="text-zinc-500 hover:text-white bg-black p-2 rounded-full border border-zinc-800"><X size={16} /></button>
             </div>
             <form onSubmit={guardarTipo} className="flex gap-2 mb-6">
-              <input required placeholder="VIP, Gobierno, etc..." value={nuevoTipo} onChange={e => setNuevoTipo(e.target.value)} className="flex-1 bg-black border border-zinc-800 p-3 rounded-xl focus:border-heraco outline-none text-white font-bold" />
-              <button type="submit" className="bg-heraco text-black p-3 rounded-xl hover:brightness-110 transition-all"><Plus /></button>
+              <input required placeholder="VIP, Gobierno, etc..." value={nuevoTipo} onChange={e => setNuevoTipo(e.target.value)} className="flex-1 bg-black border border-zinc-800 p-3 md:p-4 rounded-xl focus:border-heraco outline-none text-white font-bold text-sm" />
+              <button type="submit" className="bg-heraco text-black p-3 md:p-4 rounded-xl hover:brightness-110 transition-all"><Plus size={20}/></button>
             </form>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
               {tipos.map(t => (
-                <div key={t.id} className="flex justify-between items-center bg-black p-4 rounded-xl border border-zinc-800">
-                  <span className="font-black text-xs text-zinc-300 uppercase tracking-widest">{t.nombre}</span>
-                  <button onClick={() => eliminarTipo(t.id)} className="text-zinc-600 hover:text-red-500"><Trash2 size={16} /></button>
+                <div key={t.id} className="flex justify-between items-center bg-black p-3 md:p-4 rounded-xl border border-zinc-800">
+                  <span className="font-black text-[10px] md:text-xs text-zinc-300 uppercase tracking-widest">{t.nombre}</span>
+                  <button onClick={() => eliminarTipo(t.id)} className="text-zinc-600 hover:text-red-500 bg-zinc-900 p-2 rounded-lg"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>

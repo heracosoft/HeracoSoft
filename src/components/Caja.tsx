@@ -388,7 +388,6 @@ export default function Caja() {
             cliente_id: clienteId, subtotal: sub, iva: iva, total: totalVenta, estado: 'Autorizada', abonado: pagoInicial
         }]).select().single();
 
-        // 🟢 AQUÍ ESTÁ EL CAMBIO PARA ENVIAR EL VENTA_ID (Del anticipo)
         const { data: venta } = await supabase.from('ventas_mostrador').insert([{ turno_id: turnoActivo.id, total: pagoInicial, metodo_pago: metodoPago }]).select().single();
         
         await supabase.from('proyectos').insert([{
@@ -404,7 +403,6 @@ export default function Caja() {
     } else {
         if (metodoPago === 'Efectivo' && (efectivoRecibido === '' || efectivoRecibido < totalVenta)) return alert("El efectivo no cubre el total.");
 
-        // 🟢 AQUÍ ESTÁ EL CAMBIO PARA ENVIAR EL VENTA_ID (De Venta Directa)
         const { data: venta } = await supabase.from('ventas_mostrador').insert([{ turno_id: turnoActivo.id, total: totalVenta, metodo_pago: metodoPago }]).select().single();
         if (!venta) return alert("Error al registrar venta.");
 
@@ -416,7 +414,6 @@ export default function Caja() {
 
         const nombreClienteProyecto = clienteSeleccionado ? clienteSeleccionado.empresa : (nombreMostrador ? `${nombreMostrador} (Mostrador)` : `Mostrador (Ticket #${venta.id.substring(0,8).toUpperCase()})`);
         
-        // 🟢 Guardamos el venta_id
         await supabase.from('proyectos').insert([{ cliente: nombreClienteProyecto, nombre: `Venta Directa #${venta.id.substring(0,8).toUpperCase()}`, total: totalVenta, estado: 'Pendiente', checklist_procesos: checklistGenerado, venta_id: venta.id }]);
 
         if (cuponAplicado) await supabase.from('cupones').update({ usos_actuales: cuponAplicado.usos_actuales + 1 }).eq('id', cuponAplicado.id);
@@ -525,9 +522,9 @@ export default function Caja() {
   if (!turnoActivo) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-6 md:p-10 max-w-md w-full text-center shadow-2xl">
           <div className="w-20 h-20 bg-heraco/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-heraco/20"><Lock size={40} className="text-heraco" /></div>
-          <h1 className="text-3xl font-black uppercase italic text-white mb-2">Caja Cerrada</h1>
+          <h1 className="text-2xl md:text-3xl font-black uppercase italic text-white mb-2">Caja Cerrada</h1>
           <p className="text-sm text-zinc-500 font-bold mb-8">Debes iniciar un turno para poder cobrar.</p>
           <form onSubmit={abrirCaja}>
             <div className="text-left mb-6">
@@ -542,93 +539,97 @@ export default function Caja() {
   }
 
   return (
-    <div className="h-screen bg-black flex flex-col md:flex-row overflow-hidden text-white font-sans relative">
+    // 🟢 AQUÍ ESTÁ EL TRUCO PARA EL CELULAR: 100vh exactos y overflow oculto para no tener doble barra de scroll molesta
+    <div className="h-[100dvh] md:h-screen bg-black flex flex-col md:flex-row overflow-hidden text-white font-sans relative">
       
-      {/* LADO IZQUIERDO: PRODUCTOS Y CATÁLOGO */}
-      <div className="w-full md:w-3/5 lg:w-2/3 h-full flex flex-col border-r border-zinc-800 p-6 bg-black">
-        <div className="flex justify-between items-center mb-6">
+      {/* 🟢 LADO IZQUIERDO (PRODUCTOS Y CATÁLOGO): En celular toma el 55% de la altura, en compu todo */}
+      <div className="w-full md:w-3/5 lg:w-2/3 h-[55%] md:h-full flex flex-col border-b md:border-b-0 md:border-r border-zinc-800 p-4 md:p-6 bg-black overflow-hidden">
+        
+        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 md:mb-6 gap-3">
           <div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase italic text-white flex items-center gap-3"><ShoppingCart className="text-heraco" /> Punto de Venta</h1>
-            <p className="text-heraco font-bold text-[10px] tracking-widest uppercase mt-1">Turno Activo • Abierto a las {new Date(turnoActivo.fecha_apertura).toLocaleTimeString()}</p>
+            <h1 className="text-xl md:text-3xl font-black tracking-tighter uppercase italic text-white flex items-center gap-2 md:gap-3"><ShoppingCart className="text-heraco" /> Punto de Venta</h1>
+            <p className="text-heraco font-bold text-[9px] md:text-[10px] tracking-widest uppercase mt-1">Turno Activo • Abierto a las {new Date(turnoActivo.fecha_apertura).toLocaleTimeString()}</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={cargarVentasDia} className="bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><ListOrdered size={14}/> Ventas del Día</button>
-            {esAdmin && <button onClick={() => setMostrarModalCrearCupon(true)} className="bg-heraco/10 border border-heraco/20 text-heraco hover:bg-heraco hover:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><Ticket size={14}/> Admin Cupones</button>}
-            <button onClick={() => { traerCotizacionesParaCobro(); setMostrarModalCotizaciones(true); }} className="bg-heraco/10 border border-heraco/20 text-heraco hover:bg-heraco hover:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><FileText size={14}/> Órdenes / Cobrar</button>
-            <button onClick={() => setMostrarModalEgreso(true)} className="bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-orange-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><ArrowDownCircle size={14}/> Retiro Efectivo</button>
-            <button onClick={cerrarCaja} className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><Lock size={14}/> Cerrar Turno</button>
+          {/* Los botones ahora se envuelven (wrap) en pantallas pequeñas */}
+          <div className="flex flex-wrap gap-2">
+            <button onClick={cargarVentasDia} className="bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><ListOrdered size={14}/> Ventas del Día</button>
+            {esAdmin && <button onClick={() => setMostrarModalCrearCupon(true)} className="bg-heraco/10 border border-heraco/20 text-heraco hover:bg-heraco hover:text-black px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><Ticket size={14}/> Admin Cupones</button>}
+            <button onClick={() => { traerCotizacionesParaCobro(); setMostrarModalCotizaciones(true); }} className="bg-heraco/10 border border-heraco/20 text-heraco hover:bg-heraco hover:text-black px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><FileText size={14}/> Órdenes / Cobrar</button>
+            <button onClick={() => setMostrarModalEgreso(true)} className="bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-orange-500 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><ArrowDownCircle size={14}/> Retiro Efectivo</button>
+            <button onClick={cerrarCaja} className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"><Lock size={14}/> Cerrar Turno</button>
           </div>
         </div>
 
-        <div className="relative mb-6">
+        <div className="relative mb-4 md:mb-6 shrink-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-heraco" size={24} />
-          <input type="text" placeholder="Buscar producto, impresión, material..." className="w-full bg-zinc-900/50 border border-zinc-800 rounded-3xl py-6 pl-14 pr-6 text-xl font-bold text-white focus:border-heraco outline-none transition-all placeholder:text-zinc-600 shadow-inner" value={busqueda} onChange={e => setBusqueda(e.target.value)} autoFocus />
+          <input type="text" placeholder="Buscar producto, impresión..." className="w-full bg-zinc-900/50 border border-zinc-800 rounded-3xl py-4 md:py-6 pl-12 md:pl-14 pr-4 md:pr-6 text-lg md:text-xl font-bold text-white focus:border-heraco outline-none transition-all placeholder:text-zinc-600 shadow-inner" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {busqueda.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {productosFiltrados.map(prod => (
-                <div key={prod.id} onClick={() => agregarAlCarrito(prod)} className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl cursor-pointer hover:border-heraco/50 hover:bg-zinc-800 transition-all group flex flex-col justify-between h-32 active:scale-95">
+                <div key={prod.id} onClick={() => agregarAlCarrito(prod)} className="bg-zinc-900 border border-zinc-800 p-3 md:p-4 rounded-2xl cursor-pointer hover:border-heraco/50 hover:bg-zinc-800 transition-all group flex flex-col justify-between h-28 md:h-32 active:scale-95">
                   <div>
                     <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${prod.tipo === 'servicio' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>{prod.tipo}</span>
-                    <h3 className="font-bold text-sm mt-2 leading-tight line-clamp-2">{prod.nombre}</h3>
+                    <h3 className="font-bold text-xs md:text-sm mt-2 leading-tight line-clamp-2">{prod.nombre}</h3>
                   </div>
                   <div className="flex justify-between items-end mt-2">
-                    <p className="text-lg font-black text-heraco">${prod.precio.toLocaleString()}<span className="text-[10px] text-zinc-500">{prod.tipo === 'material' ? ' /m²' : ''}</span></p>
-                    <div className="w-8 h-8 rounded-full bg-black border border-zinc-700 flex items-center justify-center group-hover:bg-heraco group-hover:text-black transition-colors"><Plus size={16} /></div>
+                    <p className="text-sm md:text-lg font-black text-heraco">${prod.precio.toLocaleString()}<span className="text-[9px] md:text-[10px] text-zinc-500">{prod.tipo === 'material' ? ' /m²' : ''}</span></p>
+                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-black border border-zinc-700 flex items-center justify-center group-hover:bg-heraco group-hover:text-black transition-colors"><Plus size={14} /></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-700 opacity-50"><Search size={64} className="mb-4" /><p className="font-bold text-sm uppercase tracking-widest">Escribe para buscar</p></div>
+            <div className="h-full flex flex-col items-center justify-center text-zinc-700 opacity-50"><Search size={48} className="mb-4" /><p className="font-bold text-xs md:text-sm uppercase tracking-widest">Escribe para buscar</p></div>
           )}
         </div>
       </div>
 
-      {/* LADO DERECHO: TICKET Y COBRO */}
-      <div className="w-full md:w-2/5 lg:w-1/3 h-full flex flex-col bg-zinc-950 p-6 shadow-2xl relative z-10 border-l border-zinc-900">
+      {/* 🟢 LADO DERECHO (TICKET Y COBRO): En celular toma el 45% de la altura, en compu todo */}
+      <div className="w-full md:w-2/5 lg:w-1/3 h-[45%] md:h-full flex flex-col bg-zinc-950 p-3 md:p-6 shadow-2xl relative z-10 md:border-l border-zinc-900 overflow-hidden">
         
         {/* SELECTOR CLIENTE */}
-        <div className="mb-4">
-          <button onClick={() => { setBusqueda(''); setMostrarModalClientes(true); }} className={`w-full p-3 rounded-2xl border transition-all flex items-center justify-between group ${clienteSeleccionado ? 'bg-heraco/10 border-heraco/50 text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600'}`}>
-            <div className="flex items-center gap-2"><Users size={16} /><div className="text-left"><p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Asignar a Cliente</p><p className="text-xs font-bold uppercase truncate w-40">{clienteSeleccionado ? clienteSeleccionado.empresa : 'Venta de Mostrador'}</p></div></div>
+        <div className="mb-3 shrink-0">
+          <button onClick={() => { setBusqueda(''); setMostrarModalClientes(true); }} className={`w-full p-2.5 md:p-3 rounded-xl md:rounded-2xl border transition-all flex items-center justify-between group ${clienteSeleccionado ? 'bg-heraco/10 border-heraco/50 text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600'}`}>
+            <div className="flex items-center gap-2"><Users size={16} /><div className="text-left"><p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Asignar a Cliente</p><p className="text-[10px] md:text-xs font-bold uppercase truncate w-32 md:w-40">{clienteSeleccionado ? clienteSeleccionado.empresa : 'Venta de Mostrador'}</p></div></div>
             {clienteSeleccionado && <div onClick={(e) => { e.stopPropagation(); setClienteSeleccionado(null); }} className="p-2 hover:bg-black rounded-full text-zinc-500 hover:text-red-500"><X size={14}/></div>}
           </button>
           
           {/* CLIENTE TEMPORAL SI NO HAY SELECCIONADO */}
           {!clienteSeleccionado && (
             <div className="flex gap-2 mt-2">
-              <input type="text" placeholder="Nombre (Para Encargos)" className="flex-1 bg-black border border-zinc-800 rounded-xl p-2 text-xs text-white focus:border-heraco outline-none font-bold" value={nombreMostrador} onChange={e => setNombreMostrador(e.target.value)} />
-              <input type="text" placeholder="Teléfono" className="w-1/3 bg-black border border-zinc-800 rounded-xl p-2 text-xs text-white focus:border-heraco outline-none font-bold" value={telefonoMostrador} onChange={e => setTelefonoMostrador(e.target.value)} />
+              <input type="text" placeholder="Nombre (Para Encargos)" className="flex-1 bg-black border border-zinc-800 rounded-lg md:rounded-xl p-2 text-[10px] md:text-xs text-white focus:border-heraco outline-none font-bold" value={nombreMostrador} onChange={e => setNombreMostrador(e.target.value)} />
+              <input type="text" placeholder="Teléfono" className="w-1/3 bg-black border border-zinc-800 rounded-lg md:rounded-xl p-2 text-[10px] md:text-xs text-white focus:border-heraco outline-none font-bold" value={telefonoMostrador} onChange={e => setTelefonoMostrador(e.target.value)} />
             </div>
           )}
         </div>
 
-        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4 border-b border-zinc-800 pb-2 flex justify-between">Ticket Actual
+        <h2 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-500 mb-2 md:mb-4 border-b border-zinc-800 pb-2 flex justify-between shrink-0">Ticket Actual
           {carrito.length > 0 && <button onClick={() => setMostrarModalValidarCupon(true)} className="text-[9px] text-heraco hover:text-white flex items-center gap-1"><Percent size={12}/> Usar Cupón</button>}
         </h2>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 mb-6">
+        {/* LISTA DE ITEMS DEL TICKET */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-3">
           {carrito.length === 0 ? (
-            <p className="text-zinc-600 text-xs text-center mt-10 font-bold italic">No hay productos en la cuenta.</p>
+            <p className="text-zinc-600 text-xs text-center mt-6 font-bold italic">No hay productos.</p>
           ) : (
             carrito.map(item => (
-              <div key={item.idUnico} className="bg-black border border-zinc-800 p-3 rounded-2xl group/item">
+              <div key={item.idUnico} className="bg-black border border-zinc-800 p-2 md:p-3 rounded-xl md:rounded-2xl group/item">
                 <div className="flex justify-between items-start mb-1">
-                  <h4 className="font-bold text-sm leading-tight pr-4 text-white">{item.nombre}</h4>
-                  <button onClick={() => eliminarDelCarrito(item.idUnico)} className="text-zinc-600 hover:text-red-500 shrink-0"><Trash2 size={16}/></button>
+                  <h4 className="font-bold text-xs md:text-sm leading-tight pr-4 text-white">{item.nombre}</h4>
+                  <button onClick={() => eliminarDelCarrito(item.idUnico)} className="text-zinc-600 hover:text-red-500 shrink-0"><Trash2 size={14}/></button>
                 </div>
-                {item.detallesExtra && <p className="text-[10px] text-heraco/80 mb-2 font-bold italic">{item.detallesExtra}</p>}
+                {item.detallesExtra && <p className="text-[9px] md:text-[10px] text-heraco/80 mb-2 font-bold italic">{item.detallesExtra}</p>}
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
-                    <button onClick={() => cambiarCantidad(item.idUnico, -1)} className="p-1 hover:bg-zinc-800 rounded"><Minus size={14}/></button>
-                    <span className="font-black text-xs w-4 text-center">{item.cantidad}</span>
-                    <button onClick={() => cambiarCantidad(item.idUnico, 1)} className="p-1 hover:bg-zinc-800 rounded text-heraco"><Plus size={14}/></button>
+                  <div className="flex items-center gap-2 md:gap-3 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+                    <button onClick={() => cambiarCantidad(item.idUnico, -1)} className="p-1 hover:bg-zinc-800 rounded"><Minus size={12}/></button>
+                    <span className="font-black text-[10px] md:text-xs w-4 text-center">{item.cantidad}</span>
+                    <button onClick={() => cambiarCantidad(item.idUnico, 1)} className="p-1 hover:bg-zinc-800 rounded text-heraco"><Plus size={12}/></button>
                   </div>
                   <div className="flex flex-col items-end">
-                     <span onClick={() => iniciarOverride(item.idUnico)} className="font-black text-white cursor-pointer hover:text-heraco transition-colors" title="Modificar Precio">
+                     <span onClick={() => iniciarOverride(item.idUnico)} className="font-black text-sm md:text-base text-white cursor-pointer hover:text-heraco transition-colors" title="Modificar Precio">
                         ${item.subtotal.toLocaleString()}
                      </span>
                      {!esAdmin && <span className="text-[8px] text-zinc-600 uppercase opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center gap-1"><Lock size={8}/> Modificar</span>}
@@ -639,58 +640,51 @@ export default function Caja() {
           )}
         </div>
 
-        <div className="bg-black border border-zinc-800 rounded-4xl p-6 shrink-0 mt-auto shadow-xl">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <button onClick={() => setMetodoPago('Efectivo')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${metodoPago === 'Efectivo' ? 'bg-heraco/10 border-heraco text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><Banknote size={20}/> <span className="text-[9px] font-black uppercase">Efectivo</span></button>
-            <button onClick={() => setMetodoPago('Tarjeta')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${metodoPago === 'Tarjeta' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><CreditCard size={20}/> <span className="text-[9px] font-black uppercase">Tarjeta</span></button>
-            <button onClick={() => setMetodoPago('Transferencia')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${metodoPago === 'Transferencia' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><Smartphone size={20}/> <span className="text-[9px] font-black uppercase">Transf</span></button>
+        {/* ZONA DE COBRO */}
+        <div className="bg-black border border-zinc-800 rounded-2xl md:rounded-4xl p-3 md:p-6 shrink-0 mt-auto shadow-xl">
+          <div className="grid grid-cols-3 gap-1 md:gap-2 mb-3 md:mb-4">
+            <button onClick={() => setMetodoPago('Efectivo')} className={`flex flex-col items-center gap-1 p-2 md:p-3 rounded-lg md:rounded-xl border transition-all ${metodoPago === 'Efectivo' ? 'bg-heraco/10 border-heraco text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><Banknote size={16}/> <span className="text-[8px] md:text-[9px] font-black uppercase">Efectivo</span></button>
+            <button onClick={() => setMetodoPago('Tarjeta')} className={`flex flex-col items-center gap-1 p-2 md:p-3 rounded-lg md:rounded-xl border transition-all ${metodoPago === 'Tarjeta' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><CreditCard size={16}/> <span className="text-[8px] md:text-[9px] font-black uppercase">Tarjeta</span></button>
+            <button onClick={() => setMetodoPago('Transferencia')} className={`flex flex-col items-center gap-1 p-2 md:p-3 rounded-lg md:rounded-xl border transition-all ${metodoPago === 'Transferencia' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><Smartphone size={16}/> <span className="text-[8px] md:text-[9px] font-black uppercase">Transf</span></button>
           </div>
-          
-          {cuponAplicado && (
-            <div className="flex justify-between items-center text-[10px] font-black uppercase text-red-400 border-b border-zinc-800 pb-2 mb-2">
-               <span>Descuento ({cuponAplicado.codigo}):</span>
-               <span>-${(descuentoCuponValor).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-            </div>
-          )}
 
-          {/* TOGGLE ANTICIPO */}
-          <div className="flex items-center gap-2 mb-4 pt-2 border-t border-zinc-800">
-            <input type="checkbox" checked={esAnticipo} onChange={e => setEsAnticipo(e.target.checked)} className="accent-heraco w-4 h-4 cursor-pointer" />
-            <label className="text-[10px] uppercase font-black text-zinc-300 cursor-pointer" onClick={() => setEsAnticipo(!esAnticipo)}>Es Encargo (Dejar Anticipo)</label>
+          <div className="flex items-center gap-2 mb-3 md:mb-4 pt-2 border-t border-zinc-800">
+            <input type="checkbox" checked={esAnticipo} onChange={e => setEsAnticipo(e.target.checked)} className="accent-heraco w-3 h-3 md:w-4 md:h-4 cursor-pointer" />
+            <label className="text-[9px] md:text-[10px] uppercase font-black text-zinc-300 cursor-pointer" onClick={() => setEsAnticipo(!esAnticipo)}>Es Encargo (Anticipo)</label>
           </div>
 
           {esAnticipo && (
-            <div className="mb-4">
-              <label className="text-[9px] font-black text-zinc-500 uppercase mb-1 block">Monto del Anticipo:</label>
-              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-heraco font-bold">$</span><input type="number" step="0.01" max={Number(totalVenta.toFixed(2))} className="w-full bg-zinc-900 border border-heraco/50 rounded-xl py-3 pl-7 pr-3 text-white focus:border-heraco outline-none font-black text-lg" value={montoAnticipo} onChange={e => setMontoAnticipo(e.target.value === '' ? '' : Number(e.target.value))} /></div>
+            <div className="mb-3 md:mb-4">
+              <label className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase mb-1 block">Anticipo:</label>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-heraco font-bold">$</span><input type="number" step="0.01" max={Number(totalVenta.toFixed(2))} className="w-full bg-zinc-900 border border-heraco/50 rounded-lg md:rounded-xl py-2 pl-7 pr-3 text-white focus:border-heraco outline-none font-black text-sm md:text-lg" value={montoAnticipo} onChange={e => setMontoAnticipo(e.target.value === '' ? '' : Number(e.target.value))} /></div>
             </div>
           )}
 
           {metodoPago === 'Efectivo' && (
-            <div className="flex gap-4 mb-4 border-b border-zinc-800 pb-4">
-              <div className="flex-1"><label className="text-[9px] font-black text-zinc-500 uppercase mb-1 block">Recibe (Efec):</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">$</span><input type="number" min={cobroActual} step="0.01" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-7 pr-3 text-white focus:border-heraco outline-none font-bold text-sm" value={efectivoRecibido} onChange={e => setEfectivoRecibido(e.target.value === '' ? '' : Number(e.target.value))} /></div></div>
-              <div className="flex-1 text-right"><label className="text-[9px] font-black text-zinc-500 uppercase mb-1 block">Cambio:</label><p className={`font-black text-lg ${cambio >= 0 ? 'text-heraco' : 'text-red-500'}`}>${cambio >= 0 ? cambio.toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</p></div>
+            <div className="flex gap-2 md:gap-4 mb-3 md:mb-4 border-b border-zinc-800 pb-3 md:pb-4">
+              <div className="flex-1"><label className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase mb-1 block">Recibe:</label><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 font-bold text-xs">$</span><input type="number" min={cobroActual} step="0.01" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-1.5 md:py-2 pl-5 md:pl-7 pr-2 text-white focus:border-heraco outline-none font-bold text-xs md:text-sm" value={efectivoRecibido} onChange={e => setEfectivoRecibido(e.target.value === '' ? '' : Number(e.target.value))} /></div></div>
+              <div className="flex-1 text-right"><label className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase mb-1 block">Cambio:</label><p className={`font-black text-sm md:text-lg ${cambio >= 0 ? 'text-heraco' : 'text-red-500'}`}>${cambio >= 0 ? cambio.toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</p></div>
             </div>
           )}
           
-          <div className="flex justify-between items-end mb-6">
-            <span className="text-sm font-black uppercase text-zinc-400">Total Pedido</span>
-            <span className="text-4xl font-black italic tracking-tighter text-white">${totalVenta.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+          <div className="flex justify-between items-end mb-4 md:mb-6">
+            <span className="text-[10px] md:text-sm font-black uppercase text-zinc-400">Total</span>
+            <span className="text-2xl md:text-4xl font-black italic tracking-tighter text-white">${totalVenta.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
           </div>
           
-          <button onClick={procesarVenta} disabled={carrito.length === 0} className={`w-full font-black py-5 rounded-2xl uppercase tracking-widest flex justify-center items-center gap-3 transition-all ${carrito.length > 0 ? 'bg-heraco text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(203,222,32,0.2)]' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
-            <Printer size={20} /> {esAnticipo ? 'Guardar Encargo e Imprimir' : 'Cobrar e Imprimir'}
+          <button onClick={procesarVenta} disabled={carrito.length === 0} className={`w-full font-black py-3 md:py-5 rounded-xl md:rounded-2xl uppercase tracking-widest flex justify-center items-center gap-2 md:gap-3 transition-all text-[10px] md:text-sm ${carrito.length > 0 ? 'bg-heraco text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(203,222,32,0.2)]' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
+            <Printer size={16} /> {esAnticipo ? 'Guardar' : 'Cobrar'}
           </button>
         </div>
       </div>
 
-      {/* --- MODAL VENTAS DEL DÍA --- */}
+      {/* --- MODALES (Mantienen p-6 md:p-8 para espaciado correcto en móvil) --- */}
       {mostrarModalVentasDia && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-4xl rounded-[2.5rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-4xl rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={() => setMostrarModalVentasDia(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
-            <h2 className="text-2xl font-black uppercase italic text-blue-400 mb-2 flex items-center gap-2"><ListOrdered/> Ventas del Turno</h2>
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-6">Total acumulado: <span className="text-white">${ventasDia.reduce((acc, v) => acc + Number(v.total), 0).toLocaleString()}</span></p>
+            <h2 className="text-xl md:text-2xl font-black uppercase italic text-blue-400 mb-2 flex items-center gap-2"><ListOrdered/> Ventas del Turno</h2>
+            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-6">Total acumulado: <span className="text-white">${ventasDia.reduce((acc: any, v: any) => acc + Number(v.total), 0).toLocaleString()}</span></p>
             
             <div className="space-y-4">
               {ventasDia.length === 0 ? (
@@ -708,7 +702,7 @@ export default function Caja() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black uppercase text-zinc-400 mb-1">{v.metodo_pago}</p>
-                      <p className="text-2xl font-black italic text-heraco">${v.total.toLocaleString()}</p>
+                      <p className="text-xl md:text-2xl font-black italic text-heraco">${v.total.toLocaleString()}</p>
                     </div>
                   </div>
                 ))
@@ -718,18 +712,17 @@ export default function Caja() {
         </div>
       )}
 
-      {/* --- MODAL COBRAR COTIZACIÓN / ENCARGOS PENDIENTES --- */}
       {mostrarModalCotizaciones && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={() => setMostrarModalCotizaciones(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             
             {!cotizacionPagar ? (
               <>
-                <h2 className="text-2xl font-black uppercase italic text-heraco mb-4 flex items-center gap-2"><FileText /> Órdenes y Encargos Pendientes</h2>
+                <h2 className="text-xl md:text-2xl font-black uppercase italic text-heraco mb-4 flex items-center gap-2"><FileText /> Órdenes y Encargos Pendientes</h2>
                 <div className="relative mb-6">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-heraco" size={16} />
-                  <input type="text" placeholder="Buscar por Folio o Nombre del Cliente..." className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-3 text-white focus:border-heraco outline-none font-bold text-sm" value={busquedaOrdenes} onChange={e => setBusquedaOrdenes(e.target.value)} />
+                  <input type="text" placeholder="Buscar por Folio o Nombre..." className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-3 text-white focus:border-heraco outline-none font-bold text-sm" value={busquedaOrdenes} onChange={e => setBusquedaOrdenes(e.target.value)} />
                 </div>
 
                 {ordenesFiltradas.length === 0 ? (
@@ -739,15 +732,15 @@ export default function Caja() {
                     {ordenesFiltradas.map(c => {
                       const restante = c.total - (c.abonado || 0);
                       return (
-                        <div key={c.id} className="bg-black border border-zinc-800 p-5 rounded-2xl flex justify-between items-center group hover:border-heraco transition-all">
+                        <div key={c.id} className="bg-black border border-zinc-800 p-4 md:p-5 rounded-2xl flex flex-col md:flex-row justify-between md:items-center gap-3 group hover:border-heraco transition-all">
                           <div>
                             <p className="text-[10px] font-black uppercase text-zinc-500 mb-1">Folio #{c.folio} • {c.clientes?.empresa}</p>
-                            <p className="font-bold text-white">Total del Pedido: <span className="text-heraco">${c.total.toLocaleString()}</span></p>
+                            <p className="font-bold text-white text-sm md:text-base">Total: <span className="text-heraco">${c.total.toLocaleString()}</span></p>
                             <p className="text-[10px] font-bold text-zinc-400">Abonado previamente: ${(c.abonado || 0).toLocaleString()}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left md:text-right border-t border-zinc-800 md:border-0 pt-2 md:pt-0">
                             <p className="text-xs font-black uppercase text-red-400 mb-2">Resta: ${restante.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
-                            <button onClick={() => setCotizacionPagar(c)} className="bg-zinc-800 text-white hover:bg-heraco hover:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Aplicar Pago</button>
+                            <button onClick={() => setCotizacionPagar(c)} className="w-full md:w-auto bg-zinc-800 text-white hover:bg-heraco hover:text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Aplicar Pago</button>
                           </div>
                         </div>
                       )
@@ -758,19 +751,18 @@ export default function Caja() {
             ) : (
               <div className="animate-in slide-in-from-right duration-300">
                 <button onClick={() => {setCotizacionPagar(null); setMontoAbono('');}} className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-6 hover:text-white flex items-center gap-1">← Volver a la lista</button>
-                <h2 className="text-2xl font-black uppercase italic text-white mb-2">Aplicar Pago</h2>
+                <h2 className="text-xl md:text-2xl font-black uppercase italic text-white mb-2">Aplicar Pago</h2>
                 <p className="text-sm font-bold text-zinc-400 mb-6">Orden/Encargo #{cotizacionPagar.folio} • {cotizacionPagar.clientes?.empresa}</p>
 
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl mb-6 grid grid-cols-2 gap-4">
-                  <div><p className="text-[10px] uppercase font-black text-zinc-500">Restante por pagar</p><p className="text-3xl font-black text-red-400">${(cotizacionPagar.total - (cotizacionPagar.abonado || 0)).toLocaleString()}</p></div>
-                  <div className="text-right"><p className="text-[10px] uppercase font-black text-zinc-500">Abonado previamente</p><p className="text-xl font-bold text-zinc-300">${(cotizacionPagar.abonado || 0).toLocaleString()}</p></div>
+                <div className="bg-zinc-900 border border-zinc-800 p-4 md:p-6 rounded-2xl mb-6 grid grid-cols-2 gap-4">
+                  <div><p className="text-[9px] uppercase font-black text-zinc-500">Restante por pagar</p><p className="text-2xl md:text-3xl font-black text-red-400">${(cotizacionPagar.total - (cotizacionPagar.abonado || 0)).toLocaleString()}</p></div>
+                  <div className="text-right"><p className="text-[9px] uppercase font-black text-zinc-500">Abonado</p><p className="text-lg md:text-xl font-bold text-zinc-300">${(cotizacionPagar.abonado || 0).toLocaleString()}</p></div>
                 </div>
 
                 <form onSubmit={registrarAbonoCotizacion}>
                   <div className="mb-6">
                     <div className="flex justify-between items-end mb-2">
-                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 block tracking-widest">Monto a abonar ahora (Total o Parcial)</label>
-                        {/* 🟢 AQUÍ ESTÁ EL BOTÓN DE LIQUIDAR RESTANTE */}
+                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 block tracking-widest">Monto a abonar ahora</label>
                         <button type="button" onClick={() => {
                             const rest = Number((cotizacionPagar.total - (cotizacionPagar.abonado || 0)).toFixed(2));
                             setMontoAbono(rest);
@@ -781,7 +773,7 @@ export default function Caja() {
                     </div>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-heraco font-black text-xl">$</span>
-                      <input type="number" step="0.01" max={Number((cotizacionPagar.total - (cotizacionPagar.abonado || 0)).toFixed(2))} required className="w-full bg-black border border-heraco/50 rounded-2xl p-5 pl-10 focus:border-heraco outline-none font-black text-2xl text-white" value={montoAbono} onChange={e => setMontoAbono(e.target.value === '' ? '' : Number(e.target.value))} />
+                      <input type="number" step="0.01" max={Number((cotizacionPagar.total - (cotizacionPagar.abonado || 0)).toFixed(2))} required className="w-full bg-black border border-heraco/50 rounded-2xl p-5 pl-10 focus:border-heraco outline-none font-black text-xl md:text-2xl text-white" value={montoAbono} onChange={e => setMontoAbono(e.target.value === '' ? '' : Number(e.target.value))} />
                     </div>
                   </div>
 
@@ -798,7 +790,7 @@ export default function Caja() {
                     </div>
                   )}
 
-                  <button type="submit" className="w-full bg-heraco text-black font-black py-4 rounded-2xl uppercase text-sm tracking-widest hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(203,222,32,0.2)]"><CheckCircle size={20}/> Confirmar Pago e Imprimir</button>
+                  <button type="submit" className="w-full bg-heraco text-black font-black py-4 rounded-2xl uppercase text-sm tracking-widest hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(203,222,32,0.2)]"><CheckCircle size={20}/> Confirmar Pago</button>
                 </form>
               </div>
             )}
@@ -806,10 +798,9 @@ export default function Caja() {
         </div>
       )}
 
-      {/* --- LOS OTROS MODALES (EDITAR PRECIO, CUPONES, ETC) --- */}
       {mostrarModalOverride && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-100 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setMostrarModalOverride(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 mx-auto border border-red-500/20"><Key className="text-red-500" size={28}/></div>
             <h2 className="text-xl font-black uppercase italic text-center text-white mb-2">Autorización Requerida</h2>
@@ -835,8 +826,8 @@ export default function Caja() {
       )}
 
       {mostrarModalValidarCupon && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-90 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-4xl p-8 shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-4xl p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setMostrarModalValidarCupon(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={20} /></button>
             <h2 className="text-xl font-black uppercase italic text-heraco mb-6 flex items-center gap-2"><Percent/> Ingresar Cupón</h2>
             <form onSubmit={aplicarCuponVenta}>
@@ -848,14 +839,14 @@ export default function Caja() {
       )}
 
       {mostrarModalCrearCupon && esAdmin && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-100 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={() => setMostrarModalCrearCupon(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
-            <h2 className="text-2xl font-black uppercase italic text-heraco mb-6 flex items-center gap-2"><Ticket/> Administrar Cupones</h2>
+            <h2 className="text-xl md:text-2xl font-black uppercase italic text-heraco mb-6 flex items-center gap-2"><Ticket/> Administrar Cupones</h2>
             
-            <form onSubmit={crearCupon} className="bg-black/50 border border-zinc-800 rounded-2xl p-6 mb-8 space-y-4">
+            <form onSubmit={crearCupon} className="bg-black/50 border border-zinc-800 rounded-2xl p-4 md:p-6 mb-8 space-y-4">
               <h3 className="text-xs font-black uppercase text-zinc-400 border-b border-zinc-800 pb-2">Crear Nuevo Cupón</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><label className="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Código</label><input required className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-white focus:border-heraco outline-none font-bold uppercase" value={nuevoCupon.codigo} onChange={e => setNuevoCupon({...nuevoCupon, codigo: e.target.value})} /></div>
                 <div><label className="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Tipo</label><select className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-white focus:border-heraco outline-none font-bold" value={nuevoCupon.tipo} onChange={e => setNuevoCupon({...nuevoCupon, tipo: e.target.value as "porcentaje" | "fijo"})}><option value="porcentaje">Porcentaje (%)</option><option value="fijo">Monto Fijo ($)</option></select></div>
                 <div><label className="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Valor</label><input type="number" required className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-white focus:border-heraco outline-none font-bold" value={nuevoCupon.valor} onChange={e => setNuevoCupon({...nuevoCupon, valor: Number(e.target.value)})} /></div>
@@ -871,10 +862,8 @@ export default function Caja() {
               {cuponesDB.map(c => (
                 <div key={c.id} className="flex justify-between items-center bg-black border border-zinc-800 p-4 rounded-xl">
                   <div>
-                    <span className="font-black text-heraco uppercase text-lg">{c.codigo}</span>
+                    <span className="font-black text-heraco uppercase text-base md:text-lg">{c.codigo}</span>
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Desc: {c.tipo === 'porcentaje' ? `${c.valor}%` : `$${c.valor}`} | Usos: {c.usos_actuales} {c.limite_usos ? `/ ${c.limite_usos}` : ' (Ilimitado)'}</p>
-                    {c.fecha_expiracion && <p className="text-[9px] text-red-400 font-bold uppercase">Expira: {c.fecha_expiracion}</p>}
-                    {c.compra_minima > 0 && <p className="text-[9px] text-blue-400 font-bold uppercase">Mínimo: ${c.compra_minima}</p>}
                   </div>
                   <button onClick={async () => { await supabase.from('cupones').delete().eq('id', c.id); const { data } = await supabase.from('cupones').select('*'); setCuponesDB((data as Cupon[]) || []); }} className="p-2 bg-zinc-900 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors"><Trash2 size={16}/></button>
                 </div>
@@ -886,20 +875,20 @@ export default function Caja() {
 
       {mostrarModalClientes && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <button onClick={() => setMostrarModalClientes(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
-            <h2 className="text-2xl font-black uppercase italic text-white mb-6">Seleccionar Cliente</h2>
+            <h2 className="text-xl md:text-2xl font-black uppercase italic text-white mb-6">Seleccionar Cliente</h2>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-3 text-heraco" size={18} />
               <input type="text" placeholder="Buscar cliente..." className="w-full bg-black border border-zinc-800 p-3 pl-10 rounded-xl outline-none focus:border-heraco font-bold" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
               <button onClick={() => { setClienteSeleccionado(null); setMostrarModalClientes(false); setBusqueda(''); }} className="w-full text-left p-4 rounded-xl border border-zinc-800 hover:border-heraco bg-black transition-all">
-                <span className="font-bold text-zinc-400 uppercase">Venta de Mostrador (Sin Registro)</span>
+                <span className="font-bold text-zinc-400 uppercase text-xs md:text-sm">Venta de Mostrador (Sin Registro)</span>
               </button>
               {clientesFiltrados.map(c => (
                 <button key={c.id} onClick={() => { setClienteSeleccionado(c); setMostrarModalClientes(false); setBusqueda(''); }} className="w-full text-left p-4 rounded-xl border border-zinc-800 hover:border-heraco bg-zinc-900 transition-all flex items-center justify-between group">
-                  <span className="font-bold uppercase group-hover:text-heraco transition-colors">{c.empresa}</span>
+                  <span className="font-bold uppercase group-hover:text-heraco transition-colors text-xs md:text-sm">{c.empresa}</span>
                   <CheckCircle size={16} className="text-zinc-600 group-hover:text-heraco opacity-0 group-hover:opacity-100 transition-all" />
                 </button>
               ))}
@@ -910,16 +899,16 @@ export default function Caja() {
 
       {mostrarModalEgreso && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setMostrarModalEgreso(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-orange-500/20 p-3 rounded-full text-orange-500"><ArrowDownCircle size={24} /></div>
-              <h2 className="text-2xl font-black uppercase italic text-white">Retiro de Caja</h2>
+              <h2 className="text-xl md:text-2xl font-black uppercase italic text-white">Retiro de Caja</h2>
             </div>
             <form onSubmit={registrarEgreso} className="space-y-4">
               <div>
                 <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">¿En qué se gastó?</label>
-                <input required placeholder="Ej. Agua, Papelería, Proveedor..." className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-white focus:border-heraco outline-none font-bold" value={egresoConcepto} onChange={e => setEgresoConcepto(e.target.value)} />
+                <input required placeholder="Ej. Agua, Papelería..." className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-white focus:border-heraco outline-none font-bold" value={egresoConcepto} onChange={e => setEgresoConcepto(e.target.value)} />
               </div>
               <div>
                 <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">Monto retirado</label>
@@ -936,35 +925,35 @@ export default function Caja() {
 
       {productoMedidas && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <button onClick={() => setProductoMedidas(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <div className="flex items-center gap-3 mb-2">
               <Ruler className="text-heraco" size={24} />
-              <h2 className="text-2xl font-black uppercase italic text-white">Dimensiones</h2>
+              <h2 className="text-xl md:text-2xl font-black uppercase italic text-white">Dimensiones</h2>
             </div>
-            <p className="text-xs text-zinc-400 font-bold mb-2">Ingresa las medidas para: <span className="text-heraco">{productoMedidas.nombre}</span></p>
+            <p className="text-[10px] md:text-xs text-zinc-400 font-bold mb-2">Ingresa las medidas para: <span className="text-heraco">{productoMedidas.nombre}</span></p>
             {productoMedidas.tiene_ancho_fijo && (
                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 mb-4 flex items-center gap-2">
-                 <AlertCircle size={14} className="text-heraco" />
-                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Rollo Fijo: {productoMedidas.ancho_fijo_valor}m (Se calcularán lienzos/empalmes)</span>
+                 <AlertCircle size={14} className="text-heraco shrink-0" />
+                 <span className="text-[8px] md:text-[9px] font-black uppercase text-zinc-400 tracking-widest">Rollo Fijo: {productoMedidas.ancho_fijo_valor}m</span>
                </div>
             )}
             <form onSubmit={confirmarMedidas} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">Ancho (metros)</label>
-                  <input type="number" step="0.01" required className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-white focus:border-heraco outline-none font-bold text-center text-lg" placeholder="Ej: 1.5" value={ancho} onChange={e => setAncho(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">Ancho (m)</label>
+                  <input type="number" step="0.01" required className="w-full bg-black border border-zinc-800 rounded-xl md:rounded-2xl p-3 md:p-4 text-white focus:border-heraco outline-none font-bold text-center text-lg" placeholder="1.5" value={ancho} onChange={e => setAncho(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">Alto (metros)</label>
-                  <input type="number" step="0.01" required className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-white focus:border-heraco outline-none font-bold text-center text-lg" placeholder="Ej: 2" value={alto} onChange={e => setAlto(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 mb-2 block tracking-widest">Alto (m)</label>
+                  <input type="number" step="0.01" required className="w-full bg-black border border-zinc-800 rounded-xl md:rounded-2xl p-3 md:p-4 text-white focus:border-heraco outline-none font-bold text-center text-lg" placeholder="2" value={alto} onChange={e => setAlto(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 my-6 text-center">
                 <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Costo Calculado</p>
-                <p className="text-3xl font-black italic text-heraco">${Number(calcularPrecioMaterial()).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                <p className="text-2xl md:text-3xl font-black italic text-heraco">${Number(calcularPrecioMaterial()).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
               </div>
-              <button type="submit" disabled={!ancho || !alto} className={`w-full font-black py-4 rounded-2xl uppercase tracking-widest transition-transform ${!ancho || !alto ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-heraco text-black hover:scale-[1.02]'}`}>AÑADIR A LA CUENTA</button>
+              <button type="submit" disabled={!ancho || !alto} className={`w-full font-black py-4 rounded-xl md:rounded-2xl uppercase text-[10px] md:text-sm tracking-widest transition-transform ${!ancho || !alto ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-heraco text-black hover:scale-[1.02]'}`}>AÑADIR A LA CUENTA</button>
             </form>
           </div>
         </div>
