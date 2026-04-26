@@ -152,7 +152,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-black text-white p-6 font-sans">
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-6 gap-4">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Dashboard</h1>
+          {/* <-- CORRECCIÓN AQUÍ: text-3xl md:text-4xl --> */}
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase italic">Dashboard</h1>
           <p className="text-heraco text-sm uppercase tracking-widest font-bold">Heraco Agency Command</p>
         </div>
         
