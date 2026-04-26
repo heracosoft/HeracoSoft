@@ -368,7 +368,7 @@ export default function Clientes() {
 
             <div className="p-6 md:p-8 flex-1 bg-zinc-900/50 flex flex-col justify-between overflow-y-auto custom-scrollbar">
               <div>
-                <div className="flex justify-between items-center mb-6 hidden md:flex">
+                <div className="flex justify-between items-center mb-6 md:flex">
                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter text-white">Rutas de Entrega</h2>
                   <button onClick={() => setMostrarForm(false)} className="text-zinc-500 hover:text-white bg-black p-2 rounded-full border border-zinc-800"><X size={20} /></button>
                 </div>

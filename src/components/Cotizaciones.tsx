@@ -410,7 +410,7 @@ export default function Cotizaciones() {
 
         <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto justify-between md:justify-end">
             <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-black uppercase">
-                <User size={10} className="text-heraco" /> <span className="text-zinc-300 italic truncate max-w-[100px] md:max-w-full">{perfilNombre}</span>
+                <User size={10} className="text-heraco" /> <span className="text-zinc-300 italic truncate max-w-25 md:max-w-full">{perfilNombre}</span>
             </div>
             {/* 🟢 BOTÓN ADAPTADO */}
             <button onClick={() => {setItems([]); setClienteSel(null); setMostrarCreador(true);}} className="flex-1 md:flex-none justify-center bg-heraco text-black font-extrabold py-3 px-4 md:px-6 rounded-xl md:rounded-2xl flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-heraco/20 text-xs md:text-sm">
@@ -441,11 +441,11 @@ export default function Cotizaciones() {
             
             {/* 🟢 BOTONES DE ACCIÓN: Envueltos para pantallas chicas */}
             <div className="flex flex-wrap gap-2 w-full xl:w-auto justify-end border-t border-zinc-800 xl:border-0 pt-3 xl:pt-0" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => cambiarEstado(c.id, 'Autorizada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-heraco transition-all" title="Autorizar"><CheckCircle size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                <button onClick={() => cambiarEstado(c.id, 'No Responde')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-blue-400 transition-all" title="No responde"><PhoneOff size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                <button onClick={() => cambiarEstado(c.id, 'Rechazada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-red-500 transition-all" title="Rechazar"><XCircle size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                <button onClick={() => cambiarEstado(c.id, 'Archivada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-zinc-300 transition-all" title="Archivar"><Archive size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                <button onClick={() => eliminarCotizacion(c.id)} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-red-600 transition-all" title="Eliminar"><Trash2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
+                <button onClick={() => cambiarEstado(c.id, 'Autorizada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-heraco transition-all" title="Autorizar"><CheckCircle size={16} className="md:w-4.5 md:h-4.5" /></button>
+                <button onClick={() => cambiarEstado(c.id, 'No Responde')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-blue-400 transition-all" title="No responde"><PhoneOff size={16} className="md:w-4.5 md:h-4.5" /></button>
+                <button onClick={() => cambiarEstado(c.id, 'Rechazada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-red-500 transition-all" title="Rechazar"><XCircle size={16} className="md:w-4.5 md:h-4.5" /></button>
+                <button onClick={() => cambiarEstado(c.id, 'Archivada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-zinc-300 transition-all" title="Archivar"><Archive size={16} className="md:w-4.5 md:h-4.5" /></button>
+                <button onClick={() => eliminarCotizacion(c.id)} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-red-600 transition-all" title="Eliminar"><Trash2 size={16} className="md:w-4.5 md:h-4.5" /></button>
                 <button onClick={() => manejarConvertirProyecto(c)} disabled={c.estado !== 'Autorizada'} className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 md:gap-2 transition-all flex-1 xl:flex-none justify-center ${c.estado === 'Autorizada' ? 'bg-heraco text-black hover:scale-105' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}><Zap size={14} /> Proyecto</button>
             </div>
           </div>
@@ -551,7 +551,7 @@ export default function Cotizaciones() {
                 </select>
               </div>
 
-              <div className="bg-zinc-900 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-zinc-800 flex flex-col flex-1 min-h-[300px]">
+              <div className="bg-zinc-900 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-zinc-800 flex flex-col flex-1 min-h-75">
                 <label className="text-[9px] md:text-[10px] font-black uppercase text-zinc-500 mb-3 md:mb-4 block">2. Catálogo</label>
                 <div className="relative mb-3 md:mb-4 shrink-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-heraco" size={16} />
@@ -575,11 +575,11 @@ export default function Cotizaciones() {
               </div>
             </div>
 
-            <div className="lg:col-span-8 bg-zinc-900 rounded-2xl md:rounded-3xl border border-zinc-800 p-4 md:p-8 flex flex-col h-full min-h-[400px]">
+            <div className="lg:col-span-8 bg-zinc-900 rounded-2xl md:rounded-3xl border border-zinc-800 p-4 md:p-8 flex flex-col h-full min-h-100">
               
               {/* 🟢 LA MAGIA DEL OVERFLOW HORIZONTAL */}
-              <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar mb-6 min-h-[200px] bg-black/30 rounded-xl md:rounded-2xl border border-zinc-800/50 p-2 md:p-0">
-                  <table className="w-full text-left min-w-[500px]">
+              <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar mb-6 min-h-50 bg-black/30 rounded-xl md:rounded-2xl border border-zinc-800/50 p-2 md:p-0">
+                  <table className="w-full text-left min-w-125">
                     <thead className="sticky top-0 bg-zinc-900 z-10">
                       <tr className="text-zinc-500 uppercase text-[9px] md:text-[10px] font-black border-b border-zinc-800">
                         <th className="py-3 px-2 md:pb-4">Descripción</th>
@@ -594,7 +594,7 @@ export default function Cotizaciones() {
                           <tr><td colSpan={5} className="py-10 text-center text-zinc-600 text-xs font-bold uppercase italic">Agrega productos del catálogo</td></tr>
                       ) : items.map((it, idx) => (
                         <tr key={it.idUnico}>
-                          <td className="py-3 md:py-4 px-2 font-bold text-xs md:text-sm uppercase max-w-[200px]">
+                          <td className="py-3 md:py-4 px-2 font-bold text-xs md:text-sm uppercase max-w-50">
                             <span className="text-white truncate block">{it.nombre}</span>
                             {it.detallesExtra && <span className="block text-[9px] md:text-[10px] text-heraco italic truncate">{it.detallesExtra}</span>}
                           </td>
@@ -661,7 +661,7 @@ export default function Cotizaciones() {
 
       {/* MODAL CALCULADORA DE MEDIDAS */}
       {productoMedidas && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-100 flex items-center justify-center p-4">
           <div className="bg-zinc-950 border border-zinc-800 w-full max-w-md rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setProductoMedidas(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={20} className="md:w-6 md:h-6" /></button>
             <div className="flex items-center gap-2 md:gap-3 mb-2">

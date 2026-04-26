@@ -540,7 +540,7 @@ export default function Caja() {
 
   return (
     // 🟢 AQUÍ ESTÁ EL TRUCO PARA EL CELULAR: 100vh exactos y overflow oculto para no tener doble barra de scroll molesta
-    <div className="h-[100dvh] md:h-screen bg-black flex flex-col md:flex-row overflow-hidden text-white font-sans relative">
+    <div className="h-100 md:h-screen bg-black flex flex-col md:flex-row overflow-hidden text-white font-sans relative">
       
       {/* 🟢 LADO IZQUIERDO (PRODUCTOS Y CATÁLOGO): En celular toma el 55% de la altura, en compu todo */}
       <div className="w-full md:w-3/5 lg:w-2/3 h-[55%] md:h-full flex flex-col border-b md:border-b-0 md:border-r border-zinc-800 p-4 md:p-6 bg-black overflow-hidden">
@@ -799,7 +799,7 @@ export default function Caja() {
       )}
 
       {mostrarModalOverride && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-100 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setMostrarModalOverride(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 mx-auto border border-red-500/20"><Key className="text-red-500" size={28}/></div>
@@ -826,7 +826,7 @@ export default function Caja() {
       )}
 
       {mostrarModalValidarCupon && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-90 flex items-center justify-center p-4">
           <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-4xl p-6 md:p-8 shadow-2xl relative">
             <button onClick={() => setMostrarModalValidarCupon(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={20} /></button>
             <h2 className="text-xl font-black uppercase italic text-heraco mb-6 flex items-center gap-2"><Percent/> Ingresar Cupón</h2>
@@ -839,7 +839,7 @@ export default function Caja() {
       )}
 
       {mostrarModalCrearCupon && esAdmin && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-100 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={() => setMostrarModalCrearCupon(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <h2 className="text-xl md:text-2xl font-black uppercase italic text-heraco mb-6 flex items-center gap-2"><Ticket/> Administrar Cupones</h2>

@@ -375,7 +375,7 @@ export default function Materiales() {
       {/* MODAL CATEGORÍAS */}
       {mostrarModalCategorias && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-4xl p-6 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">Categorías</h2>
               <button onClick={() => setMostrarModalCategorias(false)} className="text-zinc-500 hover:text-white bg-black p-1.5 rounded-full border border-zinc-800"><X size={18}/></button>
