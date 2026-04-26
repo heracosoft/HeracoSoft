@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { 
@@ -74,7 +75,7 @@ export default function Dashboard() {
       proyectos: proys || 0,
       cotizaciones: cots || 0,
       leads: leadsData?.length || 0,
-      ventasProyectadas: leadsData?.reduce((acc, curr) => acc + Number(curr.valor_estimado), 0) || 0
+      ventasProyectadas: leadsData?.reduce((acc: any, curr: any) => acc + Number(curr.valor_estimado), 0) || 0
     });
 
     // 3. Cargar Sesión y Tareas (Deadlines)
@@ -240,7 +241,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* NOTAS */}
-        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-[450px]">
+        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-112.5">
           <div className="flex justify-between items-center mb-6 text-heraco shrink-0">
             <div className="flex items-center gap-2">
               <MessageSquare size={20} />
@@ -266,7 +267,7 @@ export default function Dashboard() {
         </div>
 
         {/* CARGA SEMANAL (Simulada por ahora) */}
-        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-[450px]">
+        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-112.5">
           <div className="flex items-center gap-2 mb-10 text-heraco shrink-0"><BarChart3 size={20} /><h2 className="font-bold uppercase text-sm tracking-wider">Carga Semanal</h2></div>
           <div className="flex items-end justify-between flex-1 px-2 gap-2 mb-4">
             {cargaTrabajo.map((p, i) => (
@@ -279,7 +280,7 @@ export default function Dashboard() {
         </div>
 
         {/* DEADLINE HERACO (Tareas reales) */}
-        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-[450px]">
+        <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-2xl flex flex-col h-112.5">
           <div className="flex items-center gap-2 mb-6 text-heraco shrink-0">
             <Calendar size={20} />
             <h2 className="font-bold uppercase text-sm tracking-wider">Deadline Heraco</h2>
@@ -289,7 +290,7 @@ export default function Dashboard() {
               const { dia, mes } = formatearFecha(tarea.fecha_limite);
               return (
                 <div key={tarea.id} className="flex items-center gap-4 bg-black/50 p-3 rounded-xl border border-zinc-800/50 hover:border-heraco/30 transition-all group">
-                  <div className={`text-center p-2 rounded-lg min-w-[50px] transition-colors ${tarea.prioridad === 'Urgente' ? 'bg-red-500 text-white group-hover:bg-red-600' : 'bg-heraco text-black group-hover:bg-[#d4e626]'}`}>
+                  <div className={`text-center p-2 rounded-lg min-w-12.5 transition-colors ${tarea.prioridad === 'Urgente' ? 'bg-red-500 text-white group-hover:bg-red-600' : 'bg-heraco text-black group-hover:bg-[#d4e626]'}`}>
                     <p className="text-[9px] font-black">{mes}</p>
                     <p className="text-lg font-black leading-none">{dia}</p>
                   </div>

@@ -85,8 +85,8 @@ export default function Cotizaciones() {
 
       const todosLosProductos = [...(servs || []), ...(mats || [])];
 
-      const cotizacionesListas = cots?.map(cot => {
-        const susItems = itemsRaw?.filter(i => i.cotizacion_id === cot.id).map(item => {
+      const cotizacionesListas = cots?.map((cot: any) => {
+        const susItems = itemsRaw?.filter((i: any) => i.cotizacion_id === cot.id).map((item: any) => {
           let nombreFinal = 'Producto/Material';
           
           if (item.servicio_id) {
@@ -206,7 +206,7 @@ export default function Cotizaciones() {
       if (itemsCot) {
         const agrupados = new Set();
         
-        itemsCot.forEach(item => {
+        itemsCot.forEach((item: any) => {
           let prodAsociado = null;
           if (item.servicio_id) {
             prodAsociado = todos.find(p => p.id === item.servicio_id);

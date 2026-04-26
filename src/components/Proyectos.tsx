@@ -155,7 +155,7 @@ export default function Proyectos() {
         const { data: detalles } = await supabase.from('detalle_ventas').select('*').eq('venta_id', idReferencia);
 
         if (venta) {
-            const itemsMapeados = detalles?.map(item => ({
+            const itemsMapeados = detalles?.map((item: any) => ({
                 cantidad: item.cantidad,
                 servicios: { nombre: item.nombre_producto },
                 total_item: item.subtotal
@@ -181,7 +181,7 @@ export default function Proyectos() {
           const { data: mats } = await supabase.from('materiales').select('id, nombre');
           const todosLosProductos = [...(servs || []), ...(mats || [])];
 
-          const itemsMapeados = itemsRaw?.map(item => {
+          const itemsMapeados = itemsRaw?.map((item: any) => {
               let nombreFinal = 'Producto/Material';
               if (item.servicio_id) {
                   const productoEncontrado = todosLosProductos.find(p => p.id === item.servicio_id);

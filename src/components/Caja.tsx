@@ -195,11 +195,11 @@ export default function Caja() {
     if (!turnoActivo) return;
     const { data: ventas } = await supabase.from('ventas_mostrador').select('total, metodo_pago').eq('turno_id', turnoActivo.id);
     let totalEfectivoVentas = 0;
-    ventas?.forEach(v => { if (v.metodo_pago === 'Efectivo') totalEfectivoVentas += Number(v.total); });
+    ventas?.forEach((v: any) => { if (v.metodo_pago === 'Efectivo') totalEfectivoVentas += Number(v.total); });
     
     const { data: egresos } = await supabase.from('egresos_caja').select('monto').eq('turno_id', turnoActivo.id);
     let totalEgresos = 0;
-    egresos?.forEach(e => { totalEgresos += Number(e.monto); });
+    egresos?.forEach((e: any) => { totalEgresos += Number(e.monto); });
 
     const totalEsperado = Number(turnoActivo.monto_apertura) + totalEfectivoVentas - totalEgresos;
 
