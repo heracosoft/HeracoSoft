@@ -29,7 +29,8 @@ export default function Materiales() {
   const [mostrarModalCategorias, setMostrarModalCategorias] = useState(false);
   const [idEditando, setIdEditando] = useState<string | null>(null);
 
-  const [cotizador, setCotizador] = useState<{[key: string]: {w: number, h: number}}>({});
+  // NUEVO ESTADO: Añadimos cobrarSobrante dentro de cada material del cotizador express
+  const [cotizador, setCotizador] = useState<{[key: string]: {w: number, h: number, cobrarSobrante?: boolean}}>({});
 
   const [nuevaCategoriaText, setNuevaCategoriaText] = useState('');
   const [nuevoProcesoText, setNuevoProcesoText] = useState(''); 
@@ -85,10 +86,11 @@ export default function Materiales() {
   };
 
   const calcularPrecioFinal = (m: Material) => {
-    const medidas = cotizador[m.id] || { w: 0, h: 0 };
+    const medidas = cotizador[m.id] || { w: 0, h: 0, cobrarSobrante: false };
     if (medidas.w <= 0 || medidas.h <= 0) return 0;
 
-    if (m.tiene_ancho_fijo && m.ancho_fijo_valor > 0) {
+    // APLICANDO LA LÓGICA DE COBRAR SOBRANTE
+    if (medidas.cobrarSobrante && m.tiene_ancho_fijo && m.ancho_fijo_valor > 0) {
       const rollo = m.ancho_fijo_valor;
       const lienzosW = Math.ceil(medidas.w / rollo);
       const areaW = (lienzosW * rollo) * medidas.h;
@@ -97,6 +99,8 @@ export default function Materiales() {
       const areaFinal = Math.min(areaW, areaH);
       return areaFinal * m.precio_base;
     }
+    
+    // Si no está marcado el checkbox o no tiene ancho fijo, calcular normal
     return (medidas.w * medidas.h) * m.precio_base;
   };
 
@@ -254,15 +258,27 @@ export default function Materiales() {
                     type="number" 
                     placeholder="W"
                     className="w-1/2 bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs focus:border-heraco outline-none font-bold"
-                    onChange={(e) => setCotizador({...cotizador, [m.id]: {...(cotizador[m.id] || {h:0}), w: parseFloat(e.target.value) || 0}})}
+                    onChange={(e) => setCotizador({...cotizador, [m.id]: {...(cotizador[m.id] || {h:0, cobrarSobrante:false}), w: parseFloat(e.target.value) || 0}})}
                   />
                   <input 
                     type="number" 
                     placeholder="H"
                     className="w-1/2 bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs focus:border-heraco outline-none font-bold"
-                    onChange={(e) => setCotizador({...cotizador, [m.id]: {...(cotizador[m.id] || {w:0}), h: parseFloat(e.target.value) || 0}})}
+                    onChange={(e) => setCotizador({...cotizador, [m.id]: {...(cotizador[m.id] || {w:0, cobrarSobrante:false}), h: parseFloat(e.target.value) || 0}})}
                   />
                 </div>
+
+                {/* 🟢 CHECKBOX EN EL COTIZADOR EXPRESS */}
+                {m.tiene_ancho_fijo && (
+                    <div 
+                        className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-800/50 cursor-pointer" 
+                        onClick={() => setCotizador({...cotizador, [m.id]: {...(cotizador[m.id] || {w:0, h:0}), cobrarSobrante: !(cotizador[m.id]?.cobrarSobrante)}})}
+                    >
+                        <input type="checkbox" checked={cotizador[m.id]?.cobrarSobrante || false} readOnly className="accent-heraco w-3 h-3 cursor-pointer" />
+                        <span className="text-[8px] md:text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors">Cobrar Sobrante</span>
+                    </div>
+                )}
+
                 <div className="mt-4 pt-3 border-t border-zinc-800/50 flex justify-between items-center">
                   <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase">Costo:</span>
                   <span className={`font-black text-lg md:text-xl text-white italic`}>

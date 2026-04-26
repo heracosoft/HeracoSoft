@@ -101,6 +101,7 @@ export default function Caja() {
   const [productoMedidas, setProductoMedidas] = useState<ProductoPOS | null>(null);
   const [ancho, setAncho] = useState<number | ''>('');
   const [alto, setAlto] = useState<number | ''>('');
+  const [cobrarSobrante, setCobrarSobrante] = useState(false); // NUEVO ESTADO
 
   // --- ESTADOS OVERRIDE DE PRECIO (ADMIN) ---
   const [mostrarModalOverride, setMostrarModalOverride] = useState(false);
@@ -469,7 +470,7 @@ export default function Caja() {
   };
 
   const agregarAlCarrito = (prod: ProductoPOS) => {
-    if (prod.tipo === 'material') { setProductoMedidas(prod); setAncho(''); setAlto(''); return; }
+    if (prod.tipo === 'material') { setProductoMedidas(prod); setAncho(''); setAlto(''); setCobrarSobrante(false); return; }
     setCarrito(prev => {
       const existe = prev.find(item => item.id === prod.id && !item.detallesExtra);
       if (existe) return prev.map(item => item.idUnico === existe.idUnico ? { ...item, cantidad: item.cantidad + 1, subtotal: (item.cantidad + 1) * item.precio } : item);
@@ -480,7 +481,7 @@ export default function Caja() {
   
   const calcularPrecioMaterial = (): number => {
     if (!productoMedidas || typeof ancho !== 'number' || typeof alto !== 'number' || ancho <= 0 || alto <= 0) return 0;
-    if (productoMedidas.tiene_ancho_fijo && productoMedidas.ancho_fijo_valor && productoMedidas.ancho_fijo_valor > 0) {
+    if (cobrarSobrante && productoMedidas.tiene_ancho_fijo && productoMedidas.ancho_fijo_valor && productoMedidas.ancho_fijo_valor > 0) {
       const r = productoMedidas.ancho_fijo_valor;
       return Math.min((Math.ceil(ancho / r) * r) * alto, (Math.ceil(alto / r) * r) * ancho) * productoMedidas.precio;
     }
@@ -491,7 +492,7 @@ export default function Caja() {
     e.preventDefault();
     if (!productoMedidas || !ancho || !alto) return;
     const c = calcularPrecioMaterial();
-    setCarrito(prev => [...prev, { ...productoMedidas, idUnico: `${productoMedidas.id}-${Date.now()}`, cantidad: 1, precio: c, subtotal: c, detallesExtra: `${ancho}m x ${alto}m ${productoMedidas.tiene_ancho_fijo ? `(Empalmes)` : ''}` }]);
+    setCarrito(prev => [...prev, { ...productoMedidas, idUnico: `${productoMedidas.id}-${Date.now()}`, cantidad: 1, precio: c, subtotal: c, detallesExtra: `${ancho}m x ${alto}m ${cobrarSobrante && productoMedidas.tiene_ancho_fijo ? '(Con Sobrante)' : ''}` }]);
     setProductoMedidas(null); setBusqueda('');
   };
 
@@ -539,7 +540,6 @@ export default function Caja() {
   }
 
   return (
-    // 🟢 EL TRUCO ESTÁ AQUÍ: Le quitamos la altura fija (h-screen) en móvil para que pueda crecer hacia abajo con scroll natural
     <div className="min-h-screen md:h-screen bg-black flex flex-col md:flex-row overflow-y-auto md:overflow-hidden text-white font-sans relative">
       
       {/* LADO IZQUIERDO (PRODUCTOS Y CATÁLOGO) */}
@@ -939,12 +939,20 @@ export default function Caja() {
               <h2 className="text-xl md:text-2xl font-black uppercase italic text-white">Dimensiones</h2>
             </div>
             <p className="text-[10px] md:text-xs text-zinc-400 font-bold mb-2">Ingresa las medidas para: <span className="text-heraco">{productoMedidas.nombre}</span></p>
+            
             {productoMedidas.tiene_ancho_fijo && (
-               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 mb-4 flex items-center gap-2">
-                 <AlertCircle size={14} className="text-heraco shrink-0" />
-                 <span className="text-[8px] md:text-[9px] font-black uppercase text-zinc-400 tracking-widest">Rollo Fijo: {productoMedidas.ancho_fijo_valor}m</span>
+               <div 
+                 className={`border rounded-lg p-3 mb-4 flex items-center justify-between gap-2 cursor-pointer transition-all ${cobrarSobrante ? 'bg-heraco/10 border-heraco text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`} 
+                 onClick={() => setCobrarSobrante(!cobrarSobrante)}
+               >
+                 <div className="flex items-center gap-2">
+                     <AlertCircle size={14} className="shrink-0" />
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Cobrar Sobrante (Rollo: {productoMedidas.ancho_fijo_valor}m)</span>
+                 </div>
+                 <input type="checkbox" checked={cobrarSobrante} readOnly className="accent-heraco w-4 h-4 cursor-pointer" />
                </div>
             )}
+            
             <form onSubmit={confirmarMedidas} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>

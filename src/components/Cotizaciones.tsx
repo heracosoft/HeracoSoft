@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { 
   FileText, Plus, Trash2, X, Save, Calculator, Printer, Loader2, 
   CheckCircle, XCircle, Clock, Zap, User, Search, Lock, Ruler, Minus,
-  Archive, PhoneOff 
+  Archive, PhoneOff, AlertCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -69,6 +69,7 @@ export default function Cotizaciones() {
   const [productoMedidas, setProductoMedidas] = useState<ProductoPOS | null>(null);
   const [anchoInput, setAnchoInput] = useState<number | ''>('');
   const [altoInput, setAltoInput] = useState<number | ''>('');
+  const [cobrarSobrante, setCobrarSobrante] = useState(false); // NUEVO ESTADO
   const [verArchivadas, setVerArchivadas] = useState(false);
 
   const esAdmin = rolUsuario.toLowerCase() === 'administrador' || rolUsuario.toLowerCase() === 'admin';
@@ -124,7 +125,6 @@ export default function Cotizaciones() {
     }
   }, []);
 
-  // Engañamos al linter de Vercel usando una función asíncrona intermedia
   useEffect(() => { 
     const iniciar = async () => {
       await cargarTodo();
@@ -256,7 +256,7 @@ export default function Cotizaciones() {
   };
 
   const calcularPrecioMaterial = (prod: ProductoPOS, a: number, h: number): number => {
-    if (prod.tiene_ancho_fijo && prod.ancho_fijo_valor && prod.ancho_fijo_valor > 0) {
+    if (cobrarSobrante && prod.tiene_ancho_fijo && prod.ancho_fijo_valor && prod.ancho_fijo_valor > 0) {
       const rollo = prod.ancho_fijo_valor;
       const numLienzosAncho = Math.ceil(a / rollo);
       const areaCobrarAncho = (numLienzosAncho * rollo) * h;
@@ -272,6 +272,7 @@ export default function Cotizaciones() {
       setProductoMedidas(prod);
       setAnchoInput('');
       setAltoInput('');
+      setCobrarSobrante(false); // Reseteamos
     } else {
       setItems(prev => [...prev, { ...prod, idUnico: `${prod.id}-${Date.now()}`, cantidad: 1, precioFinal: prod.precio, subtotal: prod.precio }]);
     }
@@ -290,7 +291,7 @@ export default function Cotizaciones() {
       subtotal: costoTotalConIva,
       ancho: Number(anchoInput),
       alto: Number(altoInput),
-      detallesExtra: `${anchoInput}m x ${altoInput}m ${productoMedidas.tiene_ancho_fijo ? '(Empalmes)' : ''}`
+      detallesExtra: `${anchoInput}m x ${altoInput}m ${cobrarSobrante && productoMedidas.tiene_ancho_fijo ? '(Con Sobrante)' : ''}`
     };
     setItems(prev => [...prev, nuevoItem]);
     setProductoMedidas(null);
@@ -439,7 +440,6 @@ export default function Cotizaciones() {
               </div>
             </div>
             
-            {/* 🟢 BOTONES DE ACCIÓN: Envueltos para pantallas chicas */}
             <div className="flex flex-wrap gap-2 w-full xl:w-auto justify-end border-t border-zinc-800 xl:border-0 pt-3 xl:pt-0" onClick={(e) => e.stopPropagation()}>
                 <button onClick={() => cambiarEstado(c.id, 'Autorizada')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-heraco transition-all" title="Autorizar"><CheckCircle size={16} className="md:w-4.5 md:h-4.5" /></button>
                 <button onClick={() => cambiarEstado(c.id, 'No Responde')} className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-xl text-zinc-500 hover:text-blue-400 transition-all" title="No responde"><PhoneOff size={16} className="md:w-4.5 md:h-4.5" /></button>
@@ -671,6 +671,20 @@ export default function Cotizaciones() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4">
                <p className="text-[9px] md:text-[10px] font-black uppercase text-zinc-500 mb-1">Material: {productoMedidas.nombre}</p>
             </div>
+            
+            {productoMedidas.tiene_ancho_fijo && (
+               <div 
+                 className={`border rounded-lg p-3 mb-4 flex items-center justify-between gap-2 cursor-pointer transition-all ${cobrarSobrante ? 'bg-heraco/10 border-heraco text-heraco' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`} 
+                 onClick={() => setCobrarSobrante(!cobrarSobrante)}
+               >
+                 <div className="flex items-center gap-2">
+                     <AlertCircle size={14} className="shrink-0" />
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Cobrar Sobrante (Rollo: {productoMedidas.ancho_fijo_valor}m)</span>
+                 </div>
+                 <input type="checkbox" checked={cobrarSobrante} readOnly className="accent-heraco w-4 h-4 cursor-pointer" />
+               </div>
+            )}
+
             <form onSubmit={confirmarMedidas} className="space-y-4">
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
